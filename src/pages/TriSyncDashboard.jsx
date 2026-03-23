@@ -1,44 +1,53 @@
 import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Grid } from '@react-three/drei'
+import { OrbitControls, Grid, Text, Environment } from '@react-three/drei'
 import { useRobotWebSocket } from '../hooks/useRobotWebSocket'
-import RobotArm from '../components/RobotArm'
-import BotLabel from '../components/BotLabel'
-import SyncPulse from '../components/SyncPulse'
-import CarUseCasePanel from '../components/CarUseCasePanel'
+import Car3D from '../components/Car3D'
 import TriSyncHUD from '../components/TriSyncHUD'
 import GyroControl from '../components/GyroControl'
 
-const BOT_CONFIGS = [
-  { id: 'ALPHA', label: 'UNIT α', offset: [-5, 0, 0] },
-  { id: 'BETA',  label: 'UNIT β', offset: [0, 0, 0] },
-  { id: 'GAMMA', label: 'UNIT γ', offset: [5, 0, 0] },
+const CAR_CONFIGS = [
+  { id: 'ALPHA', label: 'CAR α', offset: [-5.5, 0, 0] },
+  { id: 'BETA',  label: 'CAR β', offset: [0, 0, 0] },
+  { id: 'GAMMA', label: 'CAR γ', offset: [5.5, 0, 0] },
 ]
 
+const GESTURE_USE_CASE = {
+  OPEN:    { action: 'HOOD OPEN · Assembly Mode', color: '#ffd700' },
+  GRAB:    { action: 'PRECISION · Component Install', color: '#00e5ff' },
+  FIST:    { action: 'EMERGENCY HOLD · All Freeze', color: '#ff3333' },
+  POINT:   { action: 'INSPECTION · 360° Scan', color: '#c86eff' },
+  NEUTRAL: { action: 'STANDBY · Orbit Mode', color: '#aaaaaa' },
+  IDLE:    { action: 'AWAITING COMMAND...', color: '#888888' },
+  DEMO:    { action: 'DEMO · Playback Active', color: '#44cc88' },
+  FIRST_DETECTION: { action: 'TRISYNC ACTIVATED', color: '#ffd700' },
+}
+
 /**
- * TriSyncDashboard — Main stage UI.
- * Three synchronized robot arms + HUD + car use case panel + gyro control.
+ * TriSyncDashboard — System 2: Triple Car Digital Twin
+ * Three gesture-controlled cars with gyro chassis control.
  */
 export default function TriSyncDashboard() {
   const { joints, gesture, connected, syncId, clientCount } = useRobotWebSocket()
   const [revealed, setRevealed] = useState(false)
   const [gyroRotation, setGyroRotation] = useState({ rotX: 0, rotY: 0 })
 
-  // Handle first detection reveal
   if (gesture === 'FIRST_DETECTION' && !revealed) {
     setRevealed(true)
   }
 
+  const uc = GESTURE_USE_CASE[gesture] || GESTURE_USE_CASE.NEUTRAL
+
   return (
     <div style={{
-      background: '#0a0a0a',
+      background: '#050508',
       width: '100vw',
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
     }}>
-      {/* ── Top HUD Bar ────────────────────────────── */}
+      {/* ── Top HUD ────────────────────────────────── */}
       <TriSyncHUD
         gesture={gesture}
         connected={connected}
@@ -46,155 +55,240 @@ export default function TriSyncDashboard() {
         clientCount={clientCount}
       />
 
-      {/* ── Reveal Animation Overlay ───────────────── */}
+      {/* ── Reveal Overlay ──────────────────────────── */}
       {!revealed && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 50,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.05) 0%, transparent 70%)',
         }}>
           <div style={{
-            color: '#ffd700', fontSize: '2rem', letterSpacing: '0.2em',
+            color: '#ffd700', fontSize: '2.2rem', letterSpacing: '0.25em',
+            fontFamily: "'Space Mono', monospace",
             animation: 'blink 2s infinite',
-            textShadow: '0 0 20px rgba(255,215,0,0.5), 0 0 40px rgba(201,168,76,0.3)',
+            textShadow: '0 0 30px rgba(255,215,0,0.4), 0 0 60px rgba(201,168,76,0.2)',
           }}>
             AWAITING GESTURE...
           </div>
         </div>
       )}
       {revealed && (
-        <div className="trisync-reveal-overlay" onAnimationEnd={() => {}}>
+        <div className="trisync-reveal-overlay">
           <div className="trisync-reveal-text">TRISYNC ACTIVATED</div>
         </div>
       )}
 
-      {/* ── Main Stage: 3 Robots ───────────────────── */}
+      {/* ── Main 3D Stage ──────────────────────────── */}
       <div style={{ flex: 1, position: 'relative' }}>
         <Canvas
-          camera={{ position: [0, 4, 14], fov: 55 }}
+          camera={{ position: [0, 5, 16], fov: 50 }}
           shadows
-          gl={{ antialias: true }}
+          gl={{ antialias: true, toneMapping: 3 }}
         >
-          <color attach="background" args={['#0a0a0a']} />
+          <color attach="background" args={['#050508']} />
+          <fog attach="fog" args={['#050508', 20, 50]} />
 
-          {/* Lighting — BRIGHT cinematic warm key + cool fill + volumetric */}
-          <ambientLight intensity={0.5} color="#ffe8c0" />
-          <pointLight position={[3, 8, 5]} color="#f5c842" intensity={3.0} castShadow />
-          <pointLight position={[-3, 4, -4]} color="#6ab0ff" intensity={1.2} />
-          <pointLight position={[0, 2, 10]} color="#ffffff" intensity={0.8} />
+          {/* ── LIGHTING — Cinematic stage setup ─── */}
+          <ambientLight intensity={0.3} color="#ffe0b0" />
+
+          {/* Main key light — warm gold from above-front */}
           <spotLight
-            position={[0, 12, 0]}
-            angle={0.5}
+            position={[0, 15, 8]}
+            angle={0.4}
             penumbra={0.8}
-            intensity={2.5}
+            intensity={4.0}
             color="#ffd700"
             castShadow
+            shadow-mapSize={[1024, 1024]}
           />
-          {/* Rim lights for each bot */}
-          <pointLight position={[-6, 6, -2]} color="#c9a84c" intensity={1.0} />
-          <pointLight position={[6, 6, -2]} color="#c9a84c" intensity={1.0} />
 
-          {/* Holographic Grid Floor */}
+          {/* Fill lights — cool blue from sides */}
+          <pointLight position={[-8, 6, -3]} color="#4a90ff" intensity={1.5} />
+          <pointLight position={[8, 6, -3]} color="#4a90ff" intensity={1.5} />
+
+          {/* Rim lights — warm gold behind cars */}
+          <pointLight position={[-6, 3, -8]} color="#c9a84c" intensity={2.0} />
+          <pointLight position={[0, 3, -8]} color="#c9a84c" intensity={2.0} />
+          <pointLight position={[6, 3, -8]} color="#c9a84c" intensity={2.0} />
+
+          {/* Front accent light */}
+          <pointLight position={[0, 2, 12]} color="#ffffff" intensity={1.0} />
+
+          {/* Floor spotlight per car */}
+          {CAR_CONFIGS.map(car => (
+            <spotLight
+              key={car.id + '-spot'}
+              position={[car.offset[0], 8, car.offset[2]]}
+              angle={0.3}
+              penumbra={1}
+              intensity={2.0}
+              color="#ffd700"
+              castShadow
+              target-position={car.offset}
+            />
+          ))}
+
+          {/* ── FLOOR GRID ──────────────────────── */}
           <Grid
-            args={[30, 30]}
+            args={[50, 50]}
             cellSize={1}
-            cellThickness={0.5}
-            cellColor="#1a3a5c"
+            cellThickness={0.4}
+            cellColor="#0a1a30"
             sectionSize={5}
-            sectionThickness={1.0}
-            sectionColor="#c9a84c"
-            fadeDistance={40}
-            fadeStrength={1.2}
+            sectionThickness={0.8}
+            sectionColor="#c9a84c44"
+            fadeDistance={35}
+            fadeStrength={1.5}
             infiniteGrid
-            position={[0, 0, 0]}
+            position={[0, -0.55, 0]}
           />
 
-          {/* Three Robot Arms — all share same joint data */}
-          {BOT_CONFIGS.map(bot => (
-            <group key={bot.id} position={bot.offset}>
-              <RobotArm joints={joints} gesture={gesture} theme="gold-matte" />
-              <BotLabel label={bot.label} />
+          {/* ── THREE CARS ──────────────────────── */}
+          {CAR_CONFIGS.map(car => (
+            <group key={car.id} position={car.offset}>
+              <Car3D
+                gesture={gesture}
+                gyroRotation={gyroRotation}
+                unitLabel={car.label}
+              />
+              {/* Unit label below car */}
+              <Text
+                position={[0, -1.4, 2]}
+                fontSize={0.35}
+                color="#c9a84c"
+                anchorX="center"
+                anchorY="middle"
+                font="https://fonts.gstatic.com/s/spacemono/v13/i7dPIFZifjKcF5UAWdDRYE58RXi4EwQ.woff2"
+              >
+                {car.label}
+              </Text>
             </group>
           ))}
 
-          {/* Sync Pulse Ring */}
-          <SyncPulse active={connected} syncId={syncId} />
-
-          {/* Camera Controls */}
+          {/* ── Camera Controls ─────────────────── */}
           <OrbitControls
             enablePan={false}
             enableZoom={true}
             enableRotate={true}
             minDistance={6}
-            maxDistance={30}
-            target={[0, 3.5, 0]}
+            maxDistance={35}
+            target={[0, 0.5, 0]}
+            maxPolarAngle={Math.PI / 2.1}
           />
         </Canvas>
+
+        {/* ── Gesture Action Label (floating over 3D) ── */}
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontFamily: "'Space Mono', monospace",
+          fontSize: '1.1rem',
+          fontWeight: 700,
+          color: uc.color,
+          letterSpacing: '0.15em',
+          textShadow: `0 0 20px ${uc.color}66, 0 0 40px ${uc.color}33`,
+          padding: '10px 30px',
+          border: `1px solid ${uc.color}44`,
+          borderRadius: 6,
+          background: 'rgba(5,5,8,0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 10,
+        }}>
+          ⬡ {uc.action}
+        </div>
       </div>
 
-      {/* ── Bottom Strip: Car Use Case + Gyro ─────── */}
+      {/* ── Bottom Control Strip ────────────────────── */}
       <div style={{
-        height: 200,
+        height: 110,
         display: 'flex',
-        borderTop: '1px solid rgba(201, 168, 76, 0.25)',
-        background: 'linear-gradient(180deg, rgba(10,10,10,0.98) 0%, rgba(5,5,5,1) 100%)',
+        alignItems: 'center',
+        borderTop: '1px solid rgba(201,168,76,0.2)',
+        background: 'linear-gradient(180deg, rgba(8,8,12,0.98) 0%, rgba(3,3,5,1) 100%)',
+        padding: '0 40px',
+        gap: 40,
       }}>
 
-        {/* Left: Gesture info */}
+        {/* Status readout */}
         <div style={{
           flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRight: '1px solid rgba(201, 168, 76, 0.15)',
           fontFamily: "'Space Mono', monospace",
-          color: '#ffd700',
+          display: 'flex',
+          gap: 30,
+          alignItems: 'center',
         }}>
-          <div style={{
-            fontSize: '0.7rem', color: '#c9a84c', marginBottom: 8,
-            letterSpacing: '0.15em',
-          }}>
-            HOLOGRAPHIC INTERFACE
+          <div>
+            <div style={{ fontSize: '0.55rem', color: '#c9a84c88', letterSpacing: '0.15em', marginBottom: 4 }}>
+              GESTURE
+            </div>
+            <div style={{
+              fontSize: '1.3rem', color: uc.color, fontWeight: 700,
+              textShadow: `0 0 10px ${uc.color}55`,
+            }}>
+              {gesture || 'IDLE'}
+            </div>
           </div>
-          <div style={{
-            fontSize: '1.6rem', fontWeight: 700, letterSpacing: '0.1em',
-            textShadow: '0 0 12px rgba(255,215,0,0.4)',
-          }}>
-            ⬡ {gesture || 'IDLE'}
+          <div style={{ width: 1, height: 40, background: '#c9a84c22' }} />
+          <div>
+            <div style={{ fontSize: '0.55rem', color: '#c9a84c88', letterSpacing: '0.15em', marginBottom: 4 }}>
+              SYNC
+            </div>
+            <div style={{ fontSize: '1rem', color: '#c9a84ccc' }}>
+              #{syncId}
+            </div>
           </div>
-          <div style={{
-            fontSize: '0.65rem', color: '#c9a84c88', marginTop: 10,
-            letterSpacing: '0.08em',
-          }}>
-            SYNC #{syncId} · {clientCount} CLIENT{clientCount !== 1 ? 'S' : ''}
+          <div style={{ width: 1, height: 40, background: '#c9a84c22' }} />
+          <div>
+            <div style={{ fontSize: '0.55rem', color: '#c9a84c88', letterSpacing: '0.15em', marginBottom: 4 }}>
+              CLIENTS
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              color: clientCount >= 3 ? '#ffd700' : '#ff6b6b',
+            }}>
+              {clientCount}/3
+            </div>
           </div>
         </div>
 
-        {/* Center: Gyro Control */}
-        <div style={{
-          width: 180,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRight: '1px solid rgba(201, 168, 76, 0.15)',
-        }}>
+        {/* Gyro Control — center */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <GyroControl
-            size={120}
+            size={80}
             onChange={(rot) => setGyroRotation(rot)}
           />
         </div>
 
-        {/* Right: Car Use Case Panel (3D Canvas) */}
-        <div style={{ flex: 2 }}>
-          <Canvas camera={{ position: [4, 2, 4], fov: 40 }}>
-            <color attach="background" args={['#0a0a0a']} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[3, 3, 3]} intensity={2.0} color="#ffd700" />
-            <pointLight position={[-2, 2, -2]} intensity={0.8} color="#4ac9c9" />
-            <CarUseCasePanel gesture={gesture} gyroRotation={gyroRotation} />
-          </Canvas>
+        {/* Car status badges */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 16,
+          fontFamily: "'Space Mono', monospace",
+        }}>
+          {CAR_CONFIGS.map(car => (
+            <div key={car.id} style={{
+              padding: '8px 16px',
+              border: `1px solid ${uc.color}44`,
+              borderRadius: 4,
+              background: `${uc.color}08`,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '0.6rem', color: '#c9a84c88', letterSpacing: '0.1em' }}>
+                {car.label}
+              </div>
+              <div style={{
+                fontSize: '0.7rem', color: uc.color, fontWeight: 700,
+                marginTop: 2,
+              }}>
+                ● SYNCED
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
