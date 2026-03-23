@@ -108,32 +108,32 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P2-1** — Create `backend/trisync_server.py`
+- [x] **P2-1** — Create `backend/trisync_server.py`
   - Copy `server.py` as base
   - Replace single-client handler with `CLIENTS = set()` broadcast pattern
   - Implement `async broadcast(message)` — sends to all connected clients
   - **Test:** Open 3 browser tabs → all show same data
 
-- [ ] **P2-2** — Implement `classify_gesture(landmarks)` function
+- [x] **P2-2** — Implement `classify_gesture(landmarks)` function
   - States: `OPEN`, `GRAB`, `FIST`, `POINT`, `NEUTRAL`
   - Rule-based (landmark geometry) — NO AI, deterministic, zero latency
   - **Test:** Print gesture to terminal, verify each hand pose classifies correctly
 
-- [ ] **P2-3** — Implement 5-frame rolling average smoother
+- [x] **P2-3** — Implement 5-frame rolling average smoother
   - `deque(maxlen=5)` per joint
   - Applied after landmark extraction, before broadcast
   - **Test:** Compare raw vs smoothed values — jitter should visibly reduce
 
-- [ ] **P2-4** — Add `sync_id` counter to every payload
+- [x] **P2-4** — Add `sync_id` counter to every payload
   - Monotonically incrementing integer
   - Used by frontend to detect dropped frames
   - **Test:** Log `sync_id` in browser console — should be sequential
 
-- [ ] **P2-5** — Add `client_count` to payload
+- [x] **P2-5** — Add `client_count` to payload
   - Frontend shows "3/3 BOTS CONNECTED" when all clients connected
   - **Test:** Open 3 tabs → client_count = 3
 
-- [ ] **P2-6** — Implement demo mode fallback ('D' key)
+- [x] **P2-6** — Implement demo mode fallback ('D' key)
   - Pre-record a 200-frame gesture sequence
   - On `d` keypress: loop through sequence instead of live camera
   - **Test:** Cover camera, press D → robots continue moving
@@ -147,39 +147,39 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P3-1** — Create `src/pages/TriSyncDashboard.jsx`
+- [x] **P3-1** — Create `src/pages/TriSyncDashboard.jsx`
   - Layout: full viewport, matte black background (#0a0a0a)
   - Top HUD bar: XION 2026 wordmark (gold), gesture display, sync counter
   - Main area: Three.js Canvas (Canvas from @react-three/fiber)
   - Bottom strip: holographic hand (left) + car use case (right)
 
-- [ ] **P3-2** — Instantiate 3 `<RobotArm>` components at offsets
+- [x] **P3-2** — Instantiate 3 `<RobotArm>` components at offsets
   - Position: `[-5, 0, 0]`, `[0, 0, 0]`, `[5, 0, 0]`
   - All three receive **same `joints` prop** from single `useRobotWebSocket()` call
   - Add unit labels: α / β / γ (gold, Space Mono font)
 
-- [ ] **P3-3** — Build `<SyncPulse>` component
+- [x] **P3-3** — Build `<SyncPulse>` component
   - Animated ring that pulses outward from center robot on each new sync_id
   - Gold color, fades to transparent
   - Proves synchronization visually to audience
 
-- [ ] **P3-4** — Build `<TriSyncHUD>` top bar
+- [x] **P3-4** — Build `<TriSyncHUD>` top bar
   - Left: `XION 2026` (gold text, 1.5rem)
   - Center: `GESTURE: [OPEN]` with color coding per gesture type
   - Right: `[3/3] BOTS SYNCED` with green/gold indicator
   - Height: 60px, background: `rgba(0,0,0,0.8)`, border-bottom: `1px solid #c9a84c33`
 
-- [ ] **P3-5** — Gold + Matte Black material system (shared across all 3 arms)
+- [x] **P3-5** — Gold + Matte Black material system (shared across all 3 arms)
   - Define materials in `src/utils/xionMaterials.js`
   - Export: `mattBlack`, `goldAccent`, `chromeMid`
   - Ensure all robot segments reference these (no inline material definitions)
 
-- [ ] **P3-6** — Holographic grid floor
+- [x] **P3-6** — Holographic grid floor
   - Use `<gridHelper>` with gold color (`#c9a84c`)
   - Set opacity 0.2 via custom shader or `transparent: true`
   - Size: 30×30 units, division: 30
 
-- [ ] **P3-7** — Camera positioning for stage view
+- [x] **P3-7** — Camera positioning for stage view
   - Camera: `position={[0, 4, 14]}`, `fov={55}`
   - Orbit controls: disabled during demo (prevent accidental drag)
   - Optional: slow cinematic camera orbit if no hand detected
