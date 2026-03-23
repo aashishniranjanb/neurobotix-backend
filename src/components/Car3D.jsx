@@ -19,8 +19,8 @@ const GESTURE_CONFIG = {
   GRAB:    { color: '#00e5ff', emissive: '#008899', hoodOpen: false, spinSpeed: 0.5, label: 'PRECISION' },
   FIST:    { color: '#ff3333', emissive: '#991111', hoodOpen: false, spinSpeed: 0.0, label: 'HOLD' },
   POINT:   { color: '#c86eff', emissive: '#7733aa', hoodOpen: false, spinSpeed: 1.5, label: 'INSPECT' },
-  NEUTRAL: { color: '#aaaaaa', emissive: '#444444', hoodOpen: false, spinSpeed: 0.2, label: 'STANDBY' },
-  IDLE:    { color: '#777777', emissive: '#333333', hoodOpen: false, spinSpeed: 0.15, label: 'IDLE' },
+  NEUTRAL: { color: '#c9a84c', emissive: '#664d00', hoodOpen: false, spinSpeed: 0.25, label: 'STANDBY' },
+  IDLE:    { color: '#c9a84c', emissive: '#886600', hoodOpen: false, spinSpeed: 0.2, label: 'IDLE' },
   DEMO:    { color: '#44cc88', emissive: '#227744', hoodOpen: true,  spinSpeed: 0.4, label: 'DEMO' },
   FIRST_DETECTION: { color: '#ffd700', emissive: '#ffaa00', hoodOpen: true, spinSpeed: 0.8, label: 'ACTIVATED' },
 }
