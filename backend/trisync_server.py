@@ -10,6 +10,7 @@ import json
 import time
 import numpy as np
 from collections import deque
+from holographic_renderer import render_holographic_overlay
 
 # ── MediaPipe Setup ──────────────────────────────────
 mp_hands = mp.solutions.hands
@@ -193,15 +194,12 @@ async def camera_loop():
                 'client_count': len(CLIENTS)
             })
             await broadcast(payload)
-            sync_id += 1
-
-        # Show a minimal status window
-        status_frame = np.zeros((60, 400, 3), dtype=np.uint8)
-        cv2.putText(status_frame,
-                    f"TRISYNC | Clients: {len(CLIENTS)} | Sync: {sync_id}",
-                    (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                    (50, 168, 201), 1)
-        cv2.imshow('XION 2026 — TRISYNC STATUS', status_frame)
+            # Render holographic overlay
+            render_holographic_overlay(frame, lm, gesture, joints, len(CLIENTS), sync_id)
+        else:
+            # Render empty overlay if no hand detected
+            render_holographic_overlay(frame, [], "AWAITING GESTURE...", 
+                {'base': 0, 'shoulder': 0, 'elbow': 0, 'gripper': 0}, len(CLIENTS), sync_id)
 
         await asyncio.sleep(0.033)  # ~30fps
 

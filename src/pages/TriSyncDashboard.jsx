@@ -45,6 +45,20 @@ export default function TriSyncDashboard() {
       />
 
       {/* ── Reveal Animation Overlay ───────────────── */}
+      {!revealed && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            color: '#c9a84c', fontSize: '2rem', letterSpacing: '0.2em',
+            animation: 'blink 2s infinite', textShadow: '0 0 10px rgba(201,168,76,0.5)'
+          }}>
+            AWAITING GESTURE...
+          </div>
+        </div>
+      )}
       {revealed && (
         <div className="trisync-reveal-overlay" onAnimationEnd={() => {}}>
           <div className="trisync-reveal-text">TRISYNC ACTIVATED</div>
@@ -91,7 +105,7 @@ export default function TriSyncDashboard() {
           {/* Three Robot Arms — all share same joint data */}
           {BOT_CONFIGS.map(bot => (
             <group key={bot.id} position={bot.offset}>
-              <RobotArm joints={joints} theme="gold-matte" />
+              <RobotArm joints={joints} gesture={gesture} theme="gold-matte" />
               <BotLabel label={bot.label} />
             </group>
           ))}

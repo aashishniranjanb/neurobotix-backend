@@ -18,7 +18,7 @@ const brightGold = {
 /* ── Helper: degrees → radians ────────────────────── */
 const deg2rad = (deg) => deg * (Math.PI / 180)
 
-export default function RobotArm({ joints, theme = 'gold-matte' }) {
+export default function RobotArm({ joints, gesture, theme = 'gold-matte' }) {
   /* ── Refs for each joint group ──────────────────── */
   const baseRef     = useRef()
   const shoulderRef = useRef()
@@ -28,26 +28,34 @@ export default function RobotArm({ joints, theme = 'gold-matte' }) {
   const fingerRRef  = useRef()
 
   /* ── Apply rotations every frame from props using lerp ─────── */
-  useFrame(() => {
+  useFrame((state) => {
     const lerpFactor = 0.12;
+    const isIdle = !gesture || gesture === 'IDLE' || gesture === 'AWAITING GESTURE...';
+    const elapsed = state.clock.elapsedTime;
+
+    // Breath animation offsets
+    const breathBase = isIdle ? Math.sin(elapsed * 0.5) * 5 : 0;
+    const breathShoulder = isIdle ? Math.sin(elapsed * 0.6) * 3 : 0;
+    const breathElbow = isIdle ? Math.cos(elapsed * 0.7) * 4 : 0;
+
     if (baseRef.current && joints) {
       baseRef.current.rotation.y = THREE.MathUtils.lerp(
         baseRef.current.rotation.y,
-        deg2rad(joints.base || 0),
+        deg2rad((joints.base || 0) + breathBase),
         lerpFactor
       )
     }
     if (shoulderRef.current && joints) {
       shoulderRef.current.rotation.x = THREE.MathUtils.lerp(
         shoulderRef.current.rotation.x,
-        deg2rad(joints.shoulder || 0),
+        deg2rad((joints.shoulder || 0) + breathShoulder),
         lerpFactor
       )
     }
     if (elbowRef.current && joints) {
       elbowRef.current.rotation.x = THREE.MathUtils.lerp(
         elbowRef.current.rotation.x,
-        deg2rad(joints.elbow || 0),
+        deg2rad((joints.elbow || 0) + breathElbow),
         lerpFactor
       )
     }
@@ -60,7 +68,7 @@ export default function RobotArm({ joints, theme = 'gold-matte' }) {
       )
     }
 
-    const gripperOpen = joints && joints.gripper ? 0.12 : 0;
+    const gripperOpen = joints && joints.gripper && !isIdle ? 0.12 : 0;
     if (fingerLRef.current) {
         fingerLRef.current.position.x = THREE.MathUtils.lerp(
             fingerLRef.current.position.x, 

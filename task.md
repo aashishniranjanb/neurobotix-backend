@@ -193,39 +193,39 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P4-1** — Create `backend/holographic_renderer.py`
+- [x] **P4-1** — Create `backend/holographic_renderer.py`
   - Function: `render_holographic_overlay(frame, landmarks, gesture, joints, client_count, sync_id)`
   - Matte black canvas (not raw camera feed — pure synthetic)
   - Call from `trisync_server.py` camera loop
 
-- [ ] **P4-2** — Gold hand skeleton renderer
+- [x] **P4-2** — Gold hand skeleton renderer
   - Iterate `HAND_CONNECTIONS` list (21 pairs)
   - Color gradient: gold (wrist) → cyan (fingertips)
   - Line thickness: 2px, antialiased (`cv2.LINE_AA`)
 
-- [ ] **P4-3** — Fingertip particle emitter
+- [x] **P4-3** — Fingertip particle emitter
   - On each frame: 3 new particles per active fingertip
   - Particles: move upward, fade over 25 frames
   - Cap at 200 simultaneous particles (performance)
 
-- [ ] **P4-4** — Gesture banner (top-left)
+- [x] **P4-4** — Gesture banner (top-left)
   - Black background box with gold border
   - Text: `GESTURE: OPEN` in large font (0.9 scale)
   - Color changes per gesture type
 
-- [ ] **P4-5** — Joint readout panel (left side)
+- [x] **P4-5** — Joint readout panel (left side)
   - Show: BASE / SHOULDER / ELBOW / GRIPPER values
   - Monospace font, white text, updates every frame
 
-- [ ] **P4-6** — TriSync status bar (bottom)
+- [x] **P4-6** — TriSync status bar (bottom)
   - Shows: `TRISYNC [3/3 BOTS] SYNC#12847`
   - Gold when 3 clients, red when < 3
 
-- [ ] **P4-7** — XION 2026 watermark (top-right)
+- [x] **P4-7** — XION 2026 watermark (top-right)
   - Dim gold, non-intrusive
   - Font size 0.7
 
-- [ ] **P4-8** — Display window setup
+- [x] **P4-8** — Display window setup
   - `cv2.namedWindow('XION 2026 — HOLOGRAPHIC CONTROL', cv2.WINDOW_NORMAL)`
   - Set to full-screen on presenter monitor: `cv2.setWindowProperty(..., cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)`
 
@@ -238,17 +238,17 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P5-1** — Create `src/components/CarUseCasePanel.jsx`
+- [x] **P5-1** — Create `src/components/CarUseCasePanel.jsx`
   - Canvas within the bottom-right strip of TriSync Dashboard
   - 3D wireframe car model using primitive geometry (no external model file)
 
-- [ ] **P5-2** — Build car geometry from primitives
+- [x] **P5-2** — Build car geometry from primitives
   - Body: `BoxGeometry(3, 0.8, 1.5)`
   - Roof: `BoxGeometry(1.8, 0.5, 1.4)` at y+0.7
   - 4× Wheels: `CylinderGeometry(0.35, 0.35, 0.25, 16)`
   - All in wireframe mode with gesture-reactive emissive color
 
-- [ ] **P5-3** — Gesture → use case mapping
+- [x] **P5-3** — Gesture → use case mapping
   ```
   OPEN    → "ASSEMBLY · Panel Placement"     [gold]
   GRAB    → "PRECISION · Component Install"  [cyan]
@@ -257,11 +257,11 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
   NEUTRAL → "TRISYNC · Standby Mode"         [gray]
   ```
 
-- [ ] **P5-4** — Slow rotation animation
+- [x] **P5-4** — Slow rotation animation
   - `useFrame`: `rotation.y += delta * 0.4`
   - Faster on POINT gesture (inspection spin): `delta * 1.2`
 
-- [ ] **P5-5** — Use case label under car
+- [x] **P5-5** — Use case label under car
   - `<Text>` component from `@react-three/drei`
   - Space Mono font, gesture color, centered below car
   - Fade transition between gestures (opacity lerp)
@@ -275,23 +275,23 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P6-1** — Idle state (before hand detected)
+- [x] **P6-1** — Idle state (before hand detected)
   - 3 robots in slow breath animation (subtle ±5° oscillation)
   - Gold particles gently drifting on screen
   - Text: `"AWAITING GESTURE..."` pulsing softly
 
-- [ ] **P6-2** — Detection trigger
+- [x] **P6-2** — Detection trigger
   - Backend sends `gesture: "FIRST_DETECTION"` on frame where hand is first seen after idle
   - Frontend listens for this special event
 
-- [ ] **P6-3** — Reveal animation
+- [x] **P6-3** — Reveal animation
   - On `FIRST_DETECTION`: 
     1. Gold flash across entire screen (0.3s)
     2. `"TRISYNC ACTIVATED"` text slides in from center (0.8s CSS animation)
     3. All 3 robots snap from breath idle to full attention position
     4. SyncPulse ring fires once large and gold
 
-- [ ] **P6-4** — CSS reveal animation
+- [x] **P6-4** — CSS reveal animation
   ```css
   @keyframes triSyncReveal {
     0%   { opacity: 0; letter-spacing: 2em; }
@@ -299,7 +299,7 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
   }
   ```
 
-- [ ] **P6-5** — Optional: countdown trigger mode
+- [x] **P6-5** — Optional: countdown trigger mode
   - Press `SPACE` in backend terminal to manually trigger reveal
   - Useful if presenter wants to control exact moment
   - `if cv2.waitKey(1) & 0xFF == ord(' '): broadcast({'gesture': 'FIRST_DETECTION', ...})`
