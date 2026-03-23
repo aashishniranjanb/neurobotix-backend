@@ -22,12 +22,19 @@ parser.add_argument('--demo', action='store_true', help='Start in DEMO mode')
 args = parser.parse_args()
 
 # ── MediaPipe Setup ──────────────────────────────────
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(
-    max_num_hands=1, 
-    min_detection_confidence=args.confidence,
-    min_tracking_confidence=args.confidence
-)
+HAS_MEDIAPIPE = False
+try:
+    mp_hands = mp.solutions.hands
+    hands = mp_hands.Hands(
+        max_num_hands=1, 
+        min_detection_confidence=args.confidence,
+        min_tracking_confidence=args.confidence
+    )
+    HAS_MEDIAPIPE = True
+    print("[TRISYNC] ✅ MediaPipe Hands initialized.")
+except Exception as e:
+    print(f"[TRISYNC] ⚠️ WARNING: MediaPipe legacy 'solutions' not found ({e}).")
+    print("[TRISYNC] ⚠️ LIVE tracking disabled. Please use --demo mode.")
 
 # ── State ────────────────────────────────────────────
 CLIENTS = set()
@@ -35,7 +42,7 @@ SMOOTHING_WINDOW = 5
 angle_history = {k: deque(maxlen=SMOOTHING_WINDOW)
                  for k in ['base', 'shoulder', 'elbow']}
 
-DEMO_MODE = args.demo
+DEMO_MODE = args.demo or not HAS_MEDIAPIPE
 demo_frame = 0
 
 # ── Pre-recorded demo sequence (200 frames) ─────────
@@ -191,32 +198,39 @@ async def camera_loop():
 
         frame = cv2.flip(frame, 1)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb)
+        
+        if HAS_MEDIAPIPE:
+            results = hands.process(rgb)
+            if results.multi_hand_landmarks:
+                lm = results.multi_hand_landmarks[0].landmark
+                joints = landmarks_to_joints(lm)
+                gesture = classify_gesture(lm)
 
-        if results.multi_hand_landmarks:
-            lm = results.multi_hand_landmarks[0].landmark
-            joints = landmarks_to_joints(lm)
-            gesture = classify_gesture(lm)
+                # First detection trigger for unveil sequence
+                if not first_detection:
+                    first_detection = True
+                    gesture = "FIRST_DETECTION"
+                    print("[TRISYNC] ★ FIRST HAND DETECTED — Unveil triggered!")
 
-            # First detection trigger for unveil sequence
-            if not first_detection:
-                first_detection = True
-                gesture = "FIRST_DETECTION"
-                print("[TRISYNC] ★ FIRST HAND DETECTED — Unveil triggered!")
-
-            payload = json.dumps({
-                'joints': joints,
-                'gesture': gesture,
-                'timestamp': time.time(),
-                'sync_id': sync_id,
-                'client_count': len(CLIENTS)
-            })
-            await broadcast(payload)
-            # Render holographic overlay
-            render_holographic_overlay(frame, lm, gesture, joints, len(CLIENTS), sync_id)
+                payload = json.dumps({
+                    'joints': joints,
+                    'gesture': gesture,
+                    'timestamp': time.time(),
+                    'sync_id': sync_id,
+                    'client_count': len(CLIENTS)
+                })
+                await broadcast(payload)
+                sync_id += 1
+                
+                # Render holographic overlay
+                render_holographic_overlay(frame, lm, gesture, joints, len(CLIENTS), sync_id)
+            else:
+                # Still show overlay even if no detection
+                render_holographic_overlay(frame, [], "AWAITING GESTURE...", 
+                    {'base': 0, 'shoulder': 0, 'elbow': 0, 'gripper': 0}, len(CLIENTS), sync_id)
         else:
-            # Render empty overlay if no hand detected
-            render_holographic_overlay(frame, [], "AWAITING GESTURE...", 
+            # No mediapipe? Just show the blank overlay and rely on demo mode/space
+            render_holographic_overlay(frame, [], "MP MISSING", 
                 {'base': 0, 'shoulder': 0, 'elbow': 0, 'gripper': 0}, len(CLIENTS), sync_id)
 
         await asyncio.sleep(0.033)  # ~30fps

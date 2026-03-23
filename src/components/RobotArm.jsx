@@ -3,16 +3,22 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useRobotWebSocket } from '../hooks/useRobotWebSocket'
 
-/* ── Premium material presets ─────────────────────── */
-const matteBlack = { color: '#111111', metalness: 0.8, roughness: 0.4 }
-const darkMetal  = { color: '#1a1a1a', metalness: 0.75, roughness: 0.45 }
-const gold       = { color: '#d4af37', metalness: 1, roughness: 0.25 }
+/* ── Premium material presets (brightened for stage visibility) ── */
+const matteBlack = {
+  color: '#2a2a2e', metalness: 0.6, roughness: 0.5,
+  emissive: '#0a0a12', emissiveIntensity: 0.15,
+}
+const darkMetal = {
+  color: '#3a3a40', metalness: 0.65, roughness: 0.45,
+  emissive: '#12121a', emissiveIntensity: 0.12,
+}
+const gold = {
+  color: '#d4af37', metalness: 1, roughness: 0.25,
+  emissive: '#7a5a00', emissiveIntensity: 0.6,
+}
 const brightGold = {
-  color: '#ffd700',
-  metalness: 1,
-  roughness: 0.2,
-  emissive: '#aa8800',
-  emissiveIntensity: 0.4,
+  color: '#ffd700', metalness: 1, roughness: 0.2,
+  emissive: '#cc9900', emissiveIntensity: 0.7,
 }
 
 /* ── Helper: degrees → radians ────────────────────── */
