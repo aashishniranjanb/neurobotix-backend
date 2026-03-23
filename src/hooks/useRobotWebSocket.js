@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const RECONNECT_DELAY = 1500;
-const WS_URL = 'ws://localhost:8765';
+const getWsUrl = () => {
+    const host = window.location.hostname || 'localhost';
+    return `ws://${host}:8765`;
+};
+const WS_URL = getWsUrl();
 
 export function useRobotWebSocket() {
   const [joints, setJoints] = useState({

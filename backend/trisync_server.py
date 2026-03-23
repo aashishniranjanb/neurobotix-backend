@@ -9,12 +9,25 @@ import mediapipe as mp
 import json
 import time
 import numpy as np
+import argparse
 from collections import deque
 from holographic_renderer import render_holographic_overlay
 
+# ── CLI Arguments ────────────────────────────────────
+parser = argparse.ArgumentParser(description='XION 2026 — TriSync Backend')
+parser.add_argument('--host', type=str, default='0.0.0.0', help='Binding address')
+parser.add_argument('--port', type=int, default=8765, help='WebSocket port')
+parser.add_argument('--confidence', type=float, default=0.65, help='MediaPipe confidence')
+parser.add_argument('--demo', action='store_true', help='Start in DEMO mode')
+args = parser.parse_args()
+
 # ── MediaPipe Setup ──────────────────────────────────
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.75)
+hands = mp_hands.Hands(
+    max_num_hands=1, 
+    min_detection_confidence=args.confidence,
+    min_tracking_confidence=args.confidence
+)
 
 # ── State ────────────────────────────────────────────
 CLIENTS = set()
@@ -22,7 +35,7 @@ SMOOTHING_WINDOW = 5
 angle_history = {k: deque(maxlen=SMOOTHING_WINDOW)
                  for k in ['base', 'shoulder', 'elbow']}
 
-DEMO_MODE = False
+DEMO_MODE = args.demo
 demo_frame = 0
 
 # ── Pre-recorded demo sequence (200 frames) ─────────
@@ -122,10 +135,15 @@ async def camera_loop():
     global DEMO_MODE, demo_frame
 
     cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("[TRISYNC] ❌ ERROR: Could not open camera. Falling back to DEMO mode.")
+        DEMO_MODE = True
+
     sync_id = 0
     first_detection = False
 
-    print("[TRISYNC] Camera loop started. Press 'D' for demo mode, 'Q' to quit.")
+    print(f"[TRISYNC] Camera loop started. Mode: {'DEMO' if DEMO_MODE else 'LIVE'}")
+    print("[TRISYNC] Controls: D=Toggle Demo, SPACE=Manual Reveal, Q=Quit")
 
     while True:
         # Check for keyboard input
@@ -209,13 +227,19 @@ async def camera_loop():
 
 # ── Main ─────────────────────────────────────────────
 async def main():
-    server = await websockets.serve(handler, 'localhost', 8765)
-    print("=" * 50)
-    print("  XION 2026 — TRISYNC SERVER")
-    print("  WebSocket: ws://localhost:8765")
-    print("  Controls: D=Demo  SPACE=Reveal  Q=Quit")
-    print("=" * 50)
-    await asyncio.gather(server.wait_closed(), camera_loop())
+    try:
+        server = await websockets.serve(handler, args.host, args.port)
+        print("=" * 50)
+        print("  XION 2026 — TRISYNC SERVER")
+        print(f"  WebSocket: ws://{args.host}:{args.port}")
+        print(f"  Confidence: {args.confidence}")
+        print("  Controls: D=Demo  SPACE=Reveal  Q=Quit")
+        print("=" * 50)
+        await asyncio.gather(server.wait_closed(), camera_loop())
+    except Exception as e:
+        print(f"[TRISYNC] ❌ CRITICAL ERROR: {e}")
+    finally:
+        print("[TRISYNC] Server shutting down.")
 
 
 if __name__ == '__main__':
