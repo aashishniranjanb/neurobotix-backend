@@ -47,18 +47,23 @@ demo_frame = 0
 
 # ── Pre-recorded demo sequence (200 frames) ─────────
 def generate_demo_sequence():
+    """Each gesture holds for ~3 seconds (90 frames at 30fps). Starts IDLE."""
     seq = []
-    for i in range(200):
-        t = i / 30.0
-        seq.append({
-            'joints': {
-                'base': round(90 + 30 * np.sin(t * 0.5), 2),
-                'shoulder': round(45 + 20 * np.sin(t * 0.7), 2),
-                'elbow': round(30 + 15 * np.cos(t * 0.9), 2),
-                'gripper': 1 if int(t * 2) % 2 == 0 else 0
-            },
-            'gesture': ['OPEN', 'GRAB', 'POINT', 'FIST', 'NEUTRAL'][i % 5]
-        })
+    gesture_order = ['IDLE', 'IDLE', 'OPEN', 'POINT', 'FORWARD', 'FORWARD', 'REVERSE', 'FIST', 'GRAB', 'NEUTRAL']
+    frames_per_gesture = 90  # 3 seconds each
+    for gi, gesture in enumerate(gesture_order):
+        for f in range(frames_per_gesture):
+            idx = gi * frames_per_gesture + f
+            t = idx / 30.0
+            seq.append({
+                'joints': {
+                    'base': round(90 + 30 * np.sin(t * 0.5), 2),
+                    'shoulder': round(45 + 20 * np.sin(t * 0.7), 2),
+                    'elbow': round(30 + 15 * np.cos(t * 0.9), 2),
+                    'gripper': 1 if int(t * 2) % 2 == 0 else 0
+                },
+                'gesture': gesture
+            })
     return seq
 
 DEMO_SEQUENCE = generate_demo_sequence()
@@ -84,10 +89,19 @@ def classify_gesture(landmarks):
     dist_im = np.hypot(index_tip.x - middle_tip.x,
                        index_tip.y - middle_tip.y)
 
+    thumb_tip = landmarks[4]
+    pinky_mcp = landmarks[17]
+    # Measure thumb extension relative to pinky base
+    thumb_extended = np.hypot(thumb_tip.x - pinky_mcp.x, thumb_tip.y - pinky_mcp.y) > 0.15
+
     if fingers_up == 0:
         return "FIST"
-    elif fingers_up == 4:
+    elif fingers_up == 4 and thumb_extended:
         return "OPEN"
+    elif fingers_up == 4 and not thumb_extended:
+        return "REVERSE"
+    elif fingers_up == 3:
+        return "FORWARD"
     elif fingers_up == 1:
         return "POINT"
     elif dist_im < 0.04:
