@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useRobotWebSocket } from '../hooks/useRobotWebSocket'
 
 /* ── Premium material presets ─────────────────────── */
 const matteBlack = { color: '#111111', metalness: 0.8, roughness: 0.4 }
@@ -17,16 +18,7 @@ const brightGold = {
 /* ── Helper: degrees → radians ────────────────────── */
 const deg2rad = (deg) => deg * (Math.PI / 180)
 
-export default function RobotArm() {
-  /* ── React state for joint angles (degrees) ─────── */
-  const [angles, setAngles] = useState({
-    baseAngle: 0,
-    shoulderAngle: 0,
-    elbowAngle: 0,
-    wristAngle: 0,
-    gripperOpen: 0,
-  })
-
+export default function RobotArm({ joints, theme = 'gold-matte' }) {
   /* ── Refs for each joint group ──────────────────── */
   const baseRef     = useRef()
   const shoulderRef = useRef()
@@ -35,34 +27,54 @@ export default function RobotArm() {
   const fingerLRef  = useRef()
   const fingerRRef  = useRef()
 
-  /* ── State-driven animation loop (50 ms interval) ─ */
-  useEffect(() => {
-    let startTime = Date.now()
-
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - startTime) / 1000  // seconds
-
-      setAngles({
-        baseAngle:     30 * Math.sin(elapsed * 0.4),       // ±30° slow sweep
-        shoulderAngle: -20 + 15 * Math.sin(elapsed * 0.6), // oscillates –5° to –35°
-        elbowAngle:    -25 + 20 * Math.cos(elapsed * 0.8), // oscillates –5° to –45°
-        wristAngle:    15 * Math.sin(elapsed * 1.2),        // ±15° small oscillation
-        gripperOpen:   0.12 + 0.1 * Math.sin(elapsed * 1.5), // open/close
-      })
-    }, 50)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  /* ── Apply rotations every frame from state ─────── */
+  /* ── Apply rotations every frame from props using lerp ─────── */
   useFrame(() => {
-    if (baseRef.current)     baseRef.current.rotation.y     = deg2rad(angles.baseAngle)
-    if (shoulderRef.current) shoulderRef.current.rotation.x  = deg2rad(angles.shoulderAngle)
-    if (elbowRef.current)    elbowRef.current.rotation.x     = deg2rad(angles.elbowAngle)
-    if (wristRef.current)    wristRef.current.rotation.x     = deg2rad(angles.wristAngle)
+    const lerpFactor = 0.12;
+    if (baseRef.current && joints) {
+      baseRef.current.rotation.y = THREE.MathUtils.lerp(
+        baseRef.current.rotation.y,
+        deg2rad(joints.base || 0),
+        lerpFactor
+      )
+    }
+    if (shoulderRef.current && joints) {
+      shoulderRef.current.rotation.x = THREE.MathUtils.lerp(
+        shoulderRef.current.rotation.x,
+        deg2rad(joints.shoulder || 0),
+        lerpFactor
+      )
+    }
+    if (elbowRef.current && joints) {
+      elbowRef.current.rotation.x = THREE.MathUtils.lerp(
+        elbowRef.current.rotation.x,
+        deg2rad(joints.elbow || 0),
+        lerpFactor
+      )
+    }
+    // Wrist and Gripper remain direct or dummy for now since backend doesn't output wrist angle explicitly yet in trisync, but we can lerp if available.
+    if (wristRef.current && joints && joints.wrist !== undefined) {
+      wristRef.current.rotation.x = THREE.MathUtils.lerp(
+        wristRef.current.rotation.x,
+        deg2rad(joints.wrist || 0),
+        lerpFactor
+      )
+    }
 
-    if (fingerLRef.current)  fingerLRef.current.position.x = -angles.gripperOpen
-    if (fingerRRef.current)  fingerRRef.current.position.x =  angles.gripperOpen
+    const gripperOpen = joints && joints.gripper ? 0.12 : 0;
+    if (fingerLRef.current) {
+        fingerLRef.current.position.x = THREE.MathUtils.lerp(
+            fingerLRef.current.position.x, 
+            -gripperOpen, 
+            lerpFactor
+        )
+    }
+    if (fingerRRef.current) {
+        fingerRRef.current.position.x = THREE.MathUtils.lerp(
+            fingerRRef.current.position.x,
+            gripperOpen,
+            lerpFactor
+        )
+    }
   })
 
   return (

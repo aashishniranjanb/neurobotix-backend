@@ -1,8 +1,11 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid } from '@react-three/drei'
 import RobotArm from './RobotArm'
+import { useRobotWebSocket } from '../hooks/useRobotWebSocket'
 
 export default function RobotScene() {
+  const { joints, gesture, connected } = useRobotWebSocket();
+
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#0a0a0a' }}>
       <Canvas
@@ -60,7 +63,7 @@ export default function RobotScene() {
         />
 
         {/* ── Robot Arm ─────────────────────────── */}
-        <RobotArm />
+        <RobotArm joints={joints} />
 
         {/* ── Camera Controls ───────────────────── */}
         <OrbitControls
@@ -72,6 +75,19 @@ export default function RobotScene() {
           target={[0, 3.5, 0]}
         />
       </Canvas>
+
+      {/* ── Status HUD Overlay ────────────────── */}
+      <div style={{
+        position: 'fixed', bottom: 24, left: 24,
+        color: connected ? '#c9a84c' : '#ff4444',
+        fontFamily: 'monospace', fontSize: 13,
+        background: 'rgba(0,0,0,0.8)',
+        padding: '8px 16px', borderRadius: 6,
+        border: `1px solid ${connected ? '#c9a84c' : '#ff4444'}`,
+        zIndex: 10
+      }}>
+        {connected ? `⬡ LIVE · GESTURE: ${gesture}` : '⬡ RECONNECTING...'}
+      </div>
     </div>
   )
 }

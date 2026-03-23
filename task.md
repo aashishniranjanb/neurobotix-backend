@@ -32,7 +32,7 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P0-1** — Remove `node_modules` from git tracking
+- [x] **P0-1** — Remove `node_modules` from git tracking
   ```bash
   echo "node_modules/" >> .gitignore
   git rm -r --cached node_modules
@@ -40,25 +40,25 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
   git commit -m "fix: remove node_modules from git"
   ```
 
-- [ ] **P0-2** — Remove duplicate `frontend/` folder (keep root `src/`)
+- [x] **P0-2** — Remove duplicate `frontend/` folder (keep root `src/`)
   ```bash
   git rm -r frontend/
   git commit -m "refactor: consolidate to single frontend at root"
   ```
 
-- [ ] **P0-3** — Verify `backend/server.py` runs cleanly
+- [x] **P0-3** — Verify `backend/server.py` runs cleanly
   ```bash
   cd backend && python server.py
   # Expected: webcam opens, WebSocket starts at ws://localhost:8765
   ```
 
-- [ ] **P0-4** — Verify frontend builds
+- [x] **P0-4** — Verify frontend builds
   ```bash
   npm install && npm run dev
   # Expected: localhost:5173 renders robot arm (with dummy animation)
   ```
 
-- [ ] **P0-5** — Create branch `feat/xion-2026` for all new work
+- [x] **P0-5** — Create branch `feat/xion-2026` for all new work
   ```bash
   git checkout -b feat/xion-2026
   ```
@@ -72,29 +72,29 @@ PHASE 8 — Stage Prep             [~1hr]   Deployment, cable check, rehearsal
 
 ### Tasks
 
-- [ ] **P1-1** — Create `src/hooks/useRobotWebSocket.js`
+- [x] **P1-1** — Create `src/hooks/useRobotWebSocket.js`
   - Implements WebSocket connection to `ws://localhost:8765`
   - Auto-reconnects on disconnect (1.5s delay)
   - Returns `{ joints, gesture, connected, syncId }`
   - **Test:** `console.log(joints)` updates in browser when hand moves
   
-- [ ] **P1-2** — Replace dummy `setInterval` in `RobotArm.jsx`
+- [x] **P1-2** — Replace dummy `setInterval` in `RobotArm.jsx`
   - Remove: entire `setInterval` block
   - Add: `const { joints } = useRobotWebSocket();`
   - Map `joints.base` → `rotation.y`, `joints.shoulder/elbow` → `rotation.x`
   - **Test:** Move hand left/right → base joint rotates accordingly
 
-- [ ] **P1-3** — Add lerp smoothing in `useFrame()`
+- [x] **P1-3** — Add lerp smoothing in `useFrame()`
   - Factor: `0.12` (smooth but responsive)
   - Apply to all joint refs
   - **Test:** Remove hand from view → arm eases to neutral, not snaps
 
-- [ ] **P1-4** — Add connection status HUD overlay
+- [x] **P1-4** — Add connection status HUD overlay
   - Gold color when connected, red when reconnecting
   - Shows: `⬡ LIVE · GESTURE: OPEN` or `⬡ RECONNECTING...`
   - Position: bottom-left corner, monospace font
 
-- [ ] **P1-5** — End-to-end latency check
+- [x] **P1-5** — End-to-end latency check
   - Clap hands once rapidly, observe arm response
   - Target: ≤ 150ms visual delay
   - If > 150ms: check WebSocket send rate, check React render cycle
