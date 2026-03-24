@@ -43,15 +43,15 @@
       }
 
       @keyframes revealFlash {
-        0%   { background: rgba(201, 168, 76, 0.3); }
-        15%  { background: rgba(201, 168, 76, 0.05); }
-        100% { background: transparent; }
+        0%   { background: rgba(201, 168, 76, 0.4); backdrop-filter: blur(20px); }
+        20%  { background: rgba(201, 168, 76, 0.1); backdrop-filter: blur(10px); }
+        100% { background: transparent; backdrop-filter: blur(0px); }
       }
 
       @keyframes triSyncReveal {
-        0%   { opacity: 0; letter-spacing: 2em; transform: scaleX(0); }
-        60%  { opacity: 1; transform: scaleX(1.05); }
-        100% { opacity: 1; letter-spacing: 0.3em; transform: scaleX(1); }
+        0%   { opacity: 0; letter-spacing: 2.5em; transform: scale(0.8); }
+        70%  { opacity: 1; transform: scale(1.05); }
+        100% { opacity: 1; letter-spacing: 0.4em; transform: scale(1); }
       }
 
       @keyframes blink {

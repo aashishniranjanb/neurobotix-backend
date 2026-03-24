@@ -30,14 +30,18 @@ GESTURE_CAR_COLORS = {
     'GRAB':    CYAN,
     'FIST':    RED_ALERT,
     'POINT':   PURPLE,
+    'FORWARD': (80, 220, 70),  # Greenish
+    'REVERSE': (60, 140, 250), # Orangeish
     'NEUTRAL': (100, 100, 100),
 }
 
 GESTURE_USE_CASES = {
-    'OPEN':  'ASSEMBLY',
-    'GRAB':  'PRECISION',
-    'FIST':  'HOLD',
-    'POINT': 'INSPECT',
+    'OPEN':  'ASSEMBLY MODE',
+    'GRAB':  'PRECISION INSTALL',
+    'FIST':  'EMERGENCY HOLD',
+    'POINT': '360 INSPECTION',
+    'FORWARD': 'DRIVE FORWARD',
+    'REVERSE': 'REVERSE GEAR',
     'NEUTRAL': 'STANDBY',
 }
 
@@ -65,10 +69,11 @@ def update_particles(canvas):
     particles = alive[-200:]  # cap particle count
 
 
-def draw_holographic_car(canvas, gesture, joints, cx, cy, rotation_offset=0):
+def draw_holographic_car(canvas, gesture, joints, cx, cy, rotation_offset=0, car_idx=0):
     """
     Top-down wireframe car that reacts to gesture in the OpenCV window.
     cx, cy = center position on canvas.
+    car_idx: 0=Sports, 1=Sedan, 2=SUV
     """
     global car_rotation
 
@@ -77,18 +82,25 @@ def draw_holographic_car(canvas, gesture, joints, cx, cy, rotation_offset=0):
 
     # Gesture → car rotation speed
     if gesture == 'POINT':
-        speed = 3.0
-    elif gesture == 'OPEN':
-        speed = 0.8
+        speed = 3.5
+    elif gesture == 'OPEN' or gesture == 'DEMO':
+        speed = 1.0
     elif gesture == 'FIST':
         speed = 0.0
+    elif gesture == 'FORWARD' or gesture == 'REVERSE':
+        speed = 0.2 # Slow drift during movement
     else:
-        speed = 0.5
+        speed = 0.6
 
     angle = math.radians((car_rotation + rotation_offset) % 360)
 
-    # Car body points (top-down rectangle)
-    W2, H2 = 28, 50  # half-width, half-length
+    # Differentiate body silhouettes based on car_idx
+    if car_idx == 0: # Sports
+        W2, H2 = 24, 52
+    elif car_idx == 2: # SUV
+        W2, H2 = 32, 48
+    else: # Sedan
+        W2, H2 = 28, 50
     corners = [(-W2, -H2), (W2, -H2), (W2, H2), (-W2, H2)]
 
     def rotate_pt(px, py):
@@ -192,10 +204,15 @@ def render_holographic_overlay(frame, landmarks, gesture, joints, client_count, 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, GOLD_DIM, 1, cv2.LINE_AA)
 
     car_positions = [W - 260, W - 160, W - 60]
+    labels = ['SPORT', 'SEDAN', 'SUV']
     for i, cxpos in enumerate(car_positions):
         speed = draw_holographic_car(canvas, gesture, joints,
                                      cxpos, H // 2,
-                                     rotation_offset=i * 30)
+                                     rotation_offset=i * 30,
+                                     car_idx=i)
+        # Small sub-label
+        cv2.putText(canvas, labels[i], (cxpos - 20, H // 2 - 65),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, GOLD_DIM, 1)
 
     # Advance global car rotation
     car_rotation += speed

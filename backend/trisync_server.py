@@ -49,7 +49,7 @@ demo_frame = 0
 def generate_demo_sequence():
     """Each gesture holds for ~3 seconds (90 frames at 30fps). Starts IDLE."""
     seq = []
-    gesture_order = ['IDLE', 'IDLE', 'OPEN', 'POINT', 'FORWARD', 'FORWARD', 'REVERSE', 'FIST', 'GRAB', 'NEUTRAL']
+    gesture_order = ['IDLE', 'FIRST_DETECTION', 'OPEN', 'POINT', 'FORWARD', 'REVERSE', 'FIST', 'GRAB', 'NEUTRAL']
     frames_per_gesture = 90  # 3 seconds each
     for gi, gesture in enumerate(gesture_order):
         for f in range(frames_per_gesture):
@@ -192,14 +192,23 @@ async def camera_loop():
         if DEMO_MODE:
             # Play pre-recorded sequence
             demo_data = DEMO_SEQUENCE[demo_frame % len(DEMO_SEQUENCE)]
+            joints = demo_data['joints']
+            gesture = demo_data['gesture']
+            
             payload = json.dumps({
-                'joints': demo_data['joints'],
-                'gesture': demo_data['gesture'],
+                'joints': joints,
+                'gesture': gesture,
                 'timestamp': time.time(),
                 'sync_id': sync_id,
                 'client_count': len(CLIENTS)
             })
             await broadcast(payload)
+            
+            # Show holographic overlay even in demo mode (no landmarks)
+            # Use a dummy frame if needed, or just a black canvas
+            dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            render_holographic_overlay(dummy_frame, [], gesture, joints, len(CLIENTS), sync_id)
+            
             sync_id += 1
             demo_frame += 1
             await asyncio.sleep(0.033)
